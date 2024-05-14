@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,66 +39,119 @@ fun LoginScreen(loginViewModel: LoginViewModel) {
             .fillMaxSize()
             .padding(8.dp)
     ) {
-        
-        Header(modifier = Modifier)
-        Body(modifier = Modifier, loginViewModel = loginViewModel )
-        Footer(modifier = Modifier)
+
+        Header(
+            modifier = Modifier
+                .padding(
+                    10.dp
+                )
+        )
+        Body(
+            modifier = Modifier
+                .padding(top = 150.dp),
+            loginViewModel = loginViewModel
+        )
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 16.dp)
+        ) {
+            Footer(
+                modifier = Modifier
+
+            )
+
+            SignUp()
+
+        }
 
     }
 }
 
 @Composable
 fun Footer(modifier: Modifier) {
-    
+
+Divider()
+
+
 }
 
 @Composable
 fun SignUp() {
-    
+    Row (
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 15.dp),
+        horizontalArrangement = Arrangement.Center
+    ){
+        Text(text = "Don't have an account? ")
+        Text(text = "Sign up")
+    }
 }
 
 @Composable
 fun Body(modifier: Modifier, loginViewModel: LoginViewModel) {
-    val email:String by loginViewModel.email.observeAsState(initial = "")
-    val password:String by loginViewModel.password.observeAsState(initial = "")
-    val isLoginEnable:Boolean by loginViewModel.isLoginEnable.observeAsState(initial = false)
-    
-    Column(modifier = modifier) {
+    val email: String by loginViewModel.email.observeAsState(initial = "")
+    val password: String by loginViewModel.password.observeAsState(initial = "")
+    val isLoginEnable: Boolean by loginViewModel.isLoginEnable.observeAsState(initial = false)
 
-        ImageLogo(modifier = Modifier)
-        Email(email = "") {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
 
-            TextField(value = email, onValueChange = {})
+        ImageLogo(
+            modifier = Modifier
+                .padding(25.dp)
+        )
+
+        Email(email = email, onTextChanged = { loginViewModel.onLoginChanged(it, password) })
 
 
+
+        Divider(
+            Modifier.height(30.dp),
+            color = Color.White
+        )
+
+        Password(password = password, onTextChanged = { loginViewModel.onLoginChanged(email, it) })
+
+
+        Column( //columna para la ordenación de elementos, en este caso el forgotPassword
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.End //alineamos a la derecha
+        ) {
+            ForgotPassword(modifier = Modifier)
         }
-        Password(password = "") {
 
-            TextField(value = password, onValueChange = {})
-        }
-        
-        ForgotPassword(modifier = Modifier)
 
-        LoginButton(loginEnable = true)
+
+        LoginButton(loginEnable = isLoginEnable)
 
         LoginDivider()
 
         SocialLogin()
-        
+
     }
 }
 
 @Composable
 fun SocialLogin() {
     Row(
-        Modifier.fillMaxWidth(),
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 35.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
         Image(
             painter = painterResource(id = R.drawable.fb),
             contentDescription = "Social login fb",
-            modifier = Modifier.size(16.dp)
+            modifier = Modifier
+                .size(16.dp)
         )
         Text(
             text = "Continue as Aris",
@@ -136,11 +190,28 @@ fun LoginDivider() {
 
 @Composable
 fun LoginButton(loginEnable: Boolean) {
-    
-    Button(onClick = { /*TODO*/ }) {
-        
+
+    Button(
+        modifier = Modifier
+            .fillMaxWidth() //hacemos que el botón se extienda a toda la pantalla
+            .padding(25.dp) //ajustamos la medida
+            .height(50.dp),
+        colors = ButtonDefaults.buttonColors( //cambiamos sus colores por los corporativos
+            backgroundColor = Color(0xFF4EA8E9)
+        ),
+
+        onClick = {
+
+
+
+        }) {
+
+        Text(
+            text = "Log In"
+        )
+
     }
-    
+
 }
 
 
@@ -152,19 +223,58 @@ fun ForgotPassword(modifier: Modifier) {
         fontWeight = FontWeight.Bold,
         color = Color(0xFF4EA8E9),
         modifier = modifier
+            .padding(top = 20.dp)
     )
 }
 
 @Composable
-fun Password(password: String, onTextChanged: @Composable (String) -> Unit) {
+fun Password(password: String, onTextChanged: (String) -> Unit) {
     var passwordVisibility by remember { mutableStateOf(false) }
 
+    OutlinedTextField(
+        modifier = Modifier
+            .fillMaxWidth(),
+        value = password,
+        onValueChange = onTextChanged,
+        placeholder = {
+            Text(text = "Password")
+        },
+        visualTransformation = if (passwordVisibility) VisualTransformation.None
+        else PasswordVisualTransformation(),
 
+        trailingIcon = {
+            IconButton(
+                onClick = {
+
+                    passwordVisibility = !passwordVisibility
+                }) {
+
+                Icon(
+                    imageVector =
+                    if (passwordVisibility) Icons.Default.Visibility
+                    else Icons.Default.VisibilityOff,
+                    contentDescription =
+                    if (passwordVisibility) "Hide Password"
+                    else "Show Password"
+                )
+            }
+        }
+    )
 }
 
 @Composable
-fun Email(email: String, onTextChanged: @Composable (String) -> Unit) {
+fun Email(email: String, onTextChanged: (String) -> Unit) {
 
+    OutlinedTextField(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 25.dp),
+        value = email,
+        onValueChange = onTextChanged,
+        placeholder = {
+            Text(text = "Phone number, username or email")
+        }
+    )
 
 
 }
@@ -172,8 +282,13 @@ fun Email(email: String, onTextChanged: @Composable (String) -> Unit) {
 @Composable
 fun ImageLogo(modifier: Modifier) {
 
-    Image(painterResource(id = R.drawable.logoig_jetpackcomposeinstagram), contentDescription = "App logo" )
-    
+    Image(
+        painterResource(id = R.drawable.insta),
+        contentDescription = "App logo",
+        modifier = Modifier
+            .padding(25.dp)
+    )
+
 }
 
 @Composable
