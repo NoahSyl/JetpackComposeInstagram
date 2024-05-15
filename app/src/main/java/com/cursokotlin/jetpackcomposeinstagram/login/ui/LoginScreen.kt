@@ -1,6 +1,8 @@
 package com.cursokotlin.jetpackcomposeinstagram.login.ui
 
+import android.annotation.SuppressLint
 import android.app.Activity
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -31,6 +34,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.cursokotlin.jetpackcomposeinstagram.Greeting
 import com.cursokotlin.jetpackcomposeinstagram.R
 import com.cursokotlin.jetpackcomposeinstagram.ui.theme.JetpackComposeInstagramTheme
+import kotlinx.coroutines.Delay
 
 @Composable
 fun LoginScreen(loginViewModel: LoginViewModel) {
@@ -39,6 +43,11 @@ fun LoginScreen(loginViewModel: LoginViewModel) {
             .fillMaxSize()
             .padding(8.dp)
     ) {
+
+        /*Ordenamos los elementos de la aplicación separados en módulos anteriormente
+        Para asegurarnos de cumplir con la distribución de la aplicación se han usado
+        diferentes métodos de ordenación como Box y Column, además de sus atributos
+         */
 
         Header(
             modifier = Modifier
@@ -69,26 +78,35 @@ fun LoginScreen(loginViewModel: LoginViewModel) {
     }
 }
 
+//La función footer solo cuenta con el divider que separa el texto inferior del resto de la app
+
 @Composable
 fun Footer(modifier: Modifier) {
 
-Divider()
-
-
+    Divider()
 }
+
+//SignUp emula la pantalla de iniciar sesión con una cuenta ya existente
 
 @Composable
 fun SignUp() {
-    Row (
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 15.dp),
         horizontalArrangement = Arrangement.Center
-    ){
+    ) {
         Text(text = "Don't have an account? ")
-        Text(text = "Sign up")
+        Text(
+            text = "Sign up", //En este caso utilizamos los atributos de Text para emular la pantalla original
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF4EA8E9)
+        )
     }
 }
+
+//Body contiene el mayor número de funciones de la app, ya que se encarga de su ordenación
+//Además, nos da acceso a los parámetros definidos en la ViewModel
 
 @Composable
 fun Body(modifier: Modifier, loginViewModel: LoginViewModel) {
@@ -102,22 +120,23 @@ fun Body(modifier: Modifier, loginViewModel: LoginViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        ImageLogo(
+        ImageLogo( //icono de la parte superior de la aplicación
             modifier = Modifier
                 .padding(25.dp)
         )
 
-        Email(email = email, onTextChanged = { loginViewModel.onLoginChanged(it, password) })
+        /*Disposición de los principales elementos de la app: cajas de texto y funciones login*/
 
-
+        Email(
+            email = email,
+            onTextChanged = { loginViewModel.onLoginChanged(it, password) })
 
         Divider(
             Modifier.height(30.dp),
-            color = Color.White
+            color = Color.Transparent
         )
 
         Password(password = password, onTextChanged = { loginViewModel.onLoginChanged(email, it) })
-
 
         Column( //columna para la ordenación de elementos, en este caso el forgotPassword
             modifier = Modifier
@@ -128,8 +147,7 @@ fun Body(modifier: Modifier, loginViewModel: LoginViewModel) {
         }
 
 
-
-        LoginButton(loginEnable = isLoginEnable)
+        LoginButton(loginEnable = isLoginEnable, loginViewModel)
 
         LoginDivider()
 
@@ -137,6 +155,8 @@ fun Body(modifier: Modifier, loginViewModel: LoginViewModel) {
 
     }
 }
+
+//SocialLogin es la función encargada de mostrar las opciones de inicio de sesión adicionales
 
 @Composable
 fun SocialLogin() {
@@ -163,6 +183,8 @@ fun SocialLogin() {
     }
 }
 
+//LoginDivider es la función encargada de separar las dos partes de la app
+
 @Composable
 fun LoginDivider() {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -188,8 +210,16 @@ fun LoginDivider() {
     }
 }
 
+//LoginButton se encarga de las funcionalidades del botón de inicio de sesión
+
 @Composable
-fun LoginButton(loginEnable: Boolean) {
+fun LoginButton(
+    loginEnable: Boolean,
+    loginViewModel: LoginViewModel
+) { //incluimos la ViewModel en el constructor para poder usar la función enableLogin
+
+    val context =
+        LocalContext.current //context de la aplicación para invocar un Toast (debe estar en un función Composable)
 
     Button(
         modifier = Modifier
@@ -197,12 +227,43 @@ fun LoginButton(loginEnable: Boolean) {
             .padding(25.dp) //ajustamos la medida
             .height(50.dp),
         colors = ButtonDefaults.buttonColors( //cambiamos sus colores por los corporativos
-            backgroundColor = Color(0xFF4EA8E9)
+            backgroundColor = if (loginEnable) Color(0xFF4EA8E9) else (Color.LightGray) //si el usuario no cumple las condiciones el botón no será funcional y lo mostramos de forma gráfica
         ),
 
         onClick = {
 
+            //recogemos los valores de la ViewModel para operar en el butón
+            val email = loginViewModel.email.value
+            val password = loginViewModel.password.value
 
+            if (email != null && password != null) { //no podemos trabajar con los datos sin comprobar que no sean nulos
+
+
+                if (loginViewModel.enableLogin(email, password)) { //utilizamos la función para comprobar que se cumplen los patrones de email y password
+
+                    //Si se han cumplido lanzamos un Toast informando de ello
+
+                    Toast.makeText(context, "Login correct", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Welcome $email", Toast.LENGTH_SHORT).show()
+
+
+                } else {
+
+                    //En caso contrario avisamos del error del usuario
+
+                    Toast.makeText(context, "Email or password incorrect", Toast.LENGTH_SHORT)
+                        .show()
+
+                }
+            }
+
+            else {
+
+                //En caso de nulos avisamos de que escriba el contenido necesario para el login
+
+                Toast.makeText(context, "Please, specify your email and password", Toast.LENGTH_SHORT)
+                    .show()
+            }
 
         }) {
 
@@ -214,6 +275,7 @@ fun LoginButton(loginEnable: Boolean) {
 
 }
 
+//Función que muestra la línea de recuperar la contraseña
 
 @Composable
 fun ForgotPassword(modifier: Modifier) {
@@ -227,6 +289,8 @@ fun ForgotPassword(modifier: Modifier) {
     )
 }
 
+//Función que permite al usuario la entrada de texto para la contraseña
+
 @Composable
 fun Password(password: String, onTextChanged: (String) -> Unit) {
     var passwordVisibility by remember { mutableStateOf(false) }
@@ -236,22 +300,25 @@ fun Password(password: String, onTextChanged: (String) -> Unit) {
             .fillMaxWidth(),
         value = password,
         onValueChange = onTextChanged,
-        placeholder = {
+        placeholder = { //Añadimos un placeholder al TextField para indicar al usuario que debe introducir
             Text(text = "Password")
         },
-        visualTransformation = if (passwordVisibility) VisualTransformation.None
-        else PasswordVisualTransformation(),
+        maxLines = 1, //Limitamos el número de líneas a introducir
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), //Limitamos los carácteres que permite usar el teclado
+        visualTransformation = //Añadimos funcionalidad para que pueda ocultarse la contraseña
+        if (passwordVisibility) VisualTransformation.None //Si PasswordVisibility se activa no transformamos los carácteres
+        else PasswordVisualTransformation(), //Si se activa los ocultamos
 
-        trailingIcon = {
+        trailingIcon = { //Añadimos el icono para que el usuario controle la funcionalidad
             IconButton(
                 onClick = {
 
-                    passwordVisibility = !passwordVisibility
+                    passwordVisibility = !passwordVisibility //Al pulsar en él cambiamos el estado de passwordVisibility
                 }) {
 
                 Icon(
                     imageVector =
-                    if (passwordVisibility) Icons.Default.Visibility
+                    if (passwordVisibility) Icons.Default.Visibility //Seleccionamos que icono mostrar en cada estado y su descripción
                     else Icons.Default.VisibilityOff,
                     contentDescription =
                     if (passwordVisibility) "Hide Password"
@@ -262,6 +329,8 @@ fun Password(password: String, onTextChanged: (String) -> Unit) {
     )
 }
 
+//Función que permite al usuario la entrada de texto para el email
+
 @Composable
 fun Email(email: String, onTextChanged: (String) -> Unit) {
 
@@ -271,25 +340,34 @@ fun Email(email: String, onTextChanged: (String) -> Unit) {
             .padding(top = 25.dp),
         value = email,
         onValueChange = onTextChanged,
-        placeholder = {
+        placeholder = { //Añadimos un placeholder al TextField para indicar al usuario que debe introducir
             Text(text = "Phone number, username or email")
-        }
+        },
+        maxLines = 1, //Limitamos el número de líneas a introducir
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email) //Limitamos los carácteres que permite usar el teclado
     )
 
 
 }
+
+//Función que añade el logo de la app a la pantalla de login
 
 @Composable
 fun ImageLogo(modifier: Modifier) {
 
     Image(
-        painterResource(id = R.drawable.insta),
+        painterResource(
+            id = R.drawable.instagramlogo
+        ),
         contentDescription = "App logo",
         modifier = Modifier
             .padding(25.dp)
+            .height(120.dp)
     )
 
 }
+
+//Función que añade un icono para cerrar la aplicación en el caso de que el usuario lo pulse
 
 @Composable
 fun Header(modifier: Modifier) {
